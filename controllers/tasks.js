@@ -1,6 +1,6 @@
 const taskModel = require('../models/task.js')
+const { validateTask, validatePartialTask } = require('../schemes/taskScheme.js')
 
-// TODO VALIDATE ALL REQ DATA
 const getAllTasks = (req, res) => {
   const result = taskModel.getAllTasks()
   if (!result) return res.status(400).json({ message: 'No tasks found' })
@@ -18,8 +18,10 @@ const getTask = (req, res) => {
 }
 
 const createTask = (req, res) => {
-  const { description, project } = req?.body
-  if (!description) return res.status(400).json({ message: 'description is required' })
+  const validateData = validateTask(req.body)
+  if (validateData.error) return res.status(400).json({ error: JSON.parse(validateData.error.message) })
+
+  const { description, project } = validateData.data
   const result = taskModel.createTask({ description, project })
   if (!result) return res.status(500).json({ message: '500 Internal Server Error' })
 
@@ -29,8 +31,11 @@ const createTask = (req, res) => {
 const updateTask = (req, res) => {
   const { id } = req?.params
   if (!id) return res.status(400).json({ message: 'id is required' })
-  // validate body todo
-  const { description, project, complete } = req?.body
+
+  const validateData = validatePartialTask(req.body)
+  if (validateData.error) return res.status(400).json({ error: JSON.parse(validateData.error.message) })
+  const { description, project, complete } = validateData.data
+
   const result = taskModel.updateTask({
     id, description, project, complete
   })
